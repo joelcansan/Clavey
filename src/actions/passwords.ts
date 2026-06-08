@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { encrypt, decrypt } from '@/lib/crypto/aes'
+import type { PasswordEntry } from '@/types/database'
 
 const passwordSchema = z.object({
   service_name: z.string().min(1, 'El nombre del servicio es obligatorio').max(100),
@@ -17,6 +18,8 @@ export type PasswordActionResult = {
   success?: boolean
   decrypted?: string
 }
+
+type PasswordInsert = Omit<PasswordEntry, 'id' | 'created_at' | 'updated_at'> & { id?: string }
 
 export async function createPassword(formData: FormData): Promise<PasswordActionResult> {
   const supabase = await createClient()
@@ -34,13 +37,16 @@ export async function createPassword(formData: FormData): Promise<PasswordAction
 
   const encrypted_pass = encrypt(parsed.data.password, user.id)
 
-  const { error } = await supabase.from('password_entries').insert({
+  const payload: PasswordInsert = {
     user_id: user.id,
     service_name: parsed.data.service_name,
     service_icon: parsed.data.service_icon || null,
     username: parsed.data.username,
     encrypted_pass,
-  })
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase.from('password_entries') as any).insert(payload)
 
   if (error) return { error: error.message }
 
@@ -53,8 +59,8 @@ export async function revealPassword(id: string): Promise<PasswordActionResult> 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'No autenticado' }
 
-  const { data, error } = await supabase
-    .from('password_entries')
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase.from('password_entries') as any)
     .select('encrypted_pass')
     .eq('id', id)
     .eq('user_id', user.id)
@@ -75,8 +81,8 @@ export async function deletePassword(id: string): Promise<PasswordActionResult> 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'No autenticado' }
 
-  const { error } = await supabase
-    .from('password_entries')
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase.from('password_entries') as any)
     .delete()
     .eq('id', id)
     .eq('user_id', user.id)

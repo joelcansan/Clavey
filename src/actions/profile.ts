@@ -22,8 +22,8 @@ export async function updateProfile(formData: FormData): Promise<ProfileActionRe
   const parsed = profileSchema.safeParse({ full_name: formData.get('full_name') })
   if (!parsed.success) return { error: parsed.error.errors[0].message }
 
-  const { error } = await supabase
-    .from('profiles')
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase.from('profiles') as any)
     .update({ full_name: parsed.data.full_name })
     .eq('id', user.id)
 
@@ -53,8 +53,8 @@ export async function uploadAvatar(formData: FormData): Promise<ProfileActionRes
 
   const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
 
-  const { error: updateError } = await supabase
-    .from('profiles')
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error: updateError } = await (supabase.from('profiles') as any)
     .update({ avatar_url: publicUrl })
     .eq('id', user.id)
 

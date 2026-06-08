@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import Sidebar from '@/components/layout/Sidebar'
+import type { Profile } from '@/types/database'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -8,11 +9,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   if (!user) redirect('/auth/login')
 
-  const { data: profile } = await supabase
-    .from('profiles')
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: profileRaw } = await (supabase.from('profiles') as any)
     .select('full_name, avatar_url')
     .eq('id', user.id)
     .single()
+
+  const profile = profileRaw as Pick<Profile, 'full_name' | 'avatar_url'> | null
 
   return (
     <div className="dashboard">

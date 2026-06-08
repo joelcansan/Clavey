@@ -24,6 +24,7 @@ export interface Database {
           avatar_url?: string | null
           updated_at?: string
         }
+        Relationships: []
       }
       notes: {
         Row: {
@@ -48,12 +49,14 @@ export interface Database {
         }
         Update: {
           id?: string
+          user_id?: string
           title?: string
           content?: string | null
           bg_color?: string
           tags?: string[]
           updated_at?: string
         }
+        Relationships: []
       }
       password_entries: {
         Row: {
@@ -78,14 +81,20 @@ export interface Database {
         }
         Update: {
           id?: string
+          user_id?: string
           service_name?: string
           service_icon?: string | null
           username?: string
           encrypted_pass?: string
           updated_at?: string
         }
+        Relationships: []
       }
     }
+    Views: Record<string, never>
+    Functions: Record<string, never>
+    Enums: Record<string, never>
+    CompositeTypes: Record<string, never>
   }
 }
 

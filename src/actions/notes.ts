@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
+import type { Note } from '@/types/database'
 
 const noteSchema = z.object({
   title: z.string().min(1, 'El título es obligatorio').max(200),
@@ -16,6 +17,9 @@ export type NoteActionResult = {
   success?: boolean
   id?: string
 }
+
+type NoteInsert = Omit<Note, 'id' | 'created_at' | 'updated_at'> & { id?: string }
+type NoteUpdate = Partial<Omit<Note, 'id' | 'user_id' | 'created_at' | 'updated_at'>>
 
 export async function createNote(formData: FormData): Promise<NoteActionResult> {
   const supabase = await createClient()
@@ -34,9 +38,17 @@ export async function createNote(formData: FormData): Promise<NoteActionResult> 
 
   if (!parsed.success) return { error: parsed.error.errors[0].message }
 
-  const { data, error } = await supabase
-    .from('notes')
-    .insert({ ...parsed.data, user_id: user.id })
+  const payload: NoteInsert = {
+    user_id: user.id,
+    title: parsed.data.title,
+    content: parsed.data.content ?? null,
+    bg_color: parsed.data.bg_color,
+    tags: parsed.data.tags,
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase.from('notes') as any)
+    .insert(payload)
     .select('id')
     .single()
 
@@ -63,9 +75,16 @@ export async function updateNote(id: string, formData: FormData): Promise<NoteAc
 
   if (!parsed.success) return { error: parsed.error.errors[0].message }
 
-  const { error } = await supabase
-    .from('notes')
-    .update(parsed.data)
+  const payload: NoteUpdate = {
+    title: parsed.data.title,
+    content: parsed.data.content ?? null,
+    bg_color: parsed.data.bg_color,
+    tags: parsed.data.tags,
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase.from('notes') as any)
+    .update(payload)
     .eq('id', id)
     .eq('user_id', user.id)
 
@@ -80,8 +99,8 @@ export async function deleteNote(id: string): Promise<NoteActionResult> {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'No autenticado' }
 
-  const { error } = await supabase
-    .from('notes')
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase.from('notes') as any)
     .delete()
     .eq('id', id)
     .eq('user_id', user.id)
