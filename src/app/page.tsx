@@ -108,8 +108,9 @@ export default function HomePage() {
         .features-header { margin-bottom: 64px; }
         .features-label { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 14px; }
         .features-title { font-size: clamp(32px, 4vw, 48px); font-weight: 700; letter-spacing: -1px; color: var(--text-primary); max-width: 480px; line-height: 1.1; }
-        .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-        .feature-card { background: var(--surface); border-radius: 22px; padding: 30px; border: 1px solid var(--border); transition: background .3s, box-shadow .2s; }
+        .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); grid-auto-rows: 1fr; gap: 14px; align-items: stretch; }
+        .features-grid > div { height: 100%; display: flex; }
+        .feature-card { width: 100%; min-height: 200px; background: var(--surface); border-radius: 22px; padding: 30px; border: 1px solid var(--border); display: flex; flex-direction: column; transition: background .3s, box-shadow .2s; }
         .feature-card:hover { box-shadow: var(--card-shadow-hover); }
         .feature-icon { width: 42px; height: 42px; border-radius: 13px; background: var(--surface-2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; margin-bottom: 18px; }
         .feature-name { font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; letter-spacing: -0.3px; }
