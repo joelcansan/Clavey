@@ -336,7 +336,7 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
         .tiptap-editor p { margin-bottom: 8px; }
         .tiptap-editor p:last-child { margin-bottom: 0; }
         .tiptap-editor h2 { font-size: 18px; font-weight: 700; margin: 4px 0 10px; letter-spacing: -0.3px; }
-        .tiptap-editor strong, .tiptap-editor em { color: var(--text-primary); }
+        .tiptap-editor strong, .tiptap-editor em { color: inherit; }
         .tiptap-editor img { display: none; }
         .tiptap-editor ul { list-style-type: disc !important; padding-left: 22px !important; margin-bottom: 8px; }
         .tiptap-editor ul li { display: list-item !important; list-style-type: disc !important; margin-bottom: 3px; }
