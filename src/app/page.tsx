@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { ArrowRight, FileText, Lock, Cloud, Palette, Zap, FileOutput, Moon, Sun } from 'lucide-react'
+import { ArrowRight, FileText, Lock, Cloud, Palette, Zap, FileOutput, Moon, Sun, ShieldCheck } from 'lucide-react'
 import { useTheme } from '@/components/ThemeProvider'
 
 function useInView(threshold = 0.15) {
@@ -148,10 +148,23 @@ export default function HomePage() {
         .btn-white:hover { opacity: 0.9; transform: translateY(-1px); }
 
         /* ── Footer ── */
-        .home-footer { border-top: 1px solid var(--border); padding: 28px; background: var(--surface); transition: background .3s; }
-        .home-footer-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
-        .footer-logo { font-weight: 700; font-size: 14px; color: var(--text-primary); letter-spacing: -0.3px; }
+        .home-footer { border-top: 1px solid var(--border); padding: 52px 28px 28px; background: var(--surface); transition: background .3s; }
+        .home-footer-inner { max-width: 1100px; margin: 0 auto; }
+        .footer-main { display: grid; grid-template-columns: minmax(260px, 1.15fr) 2fr; gap: 56px; align-items: start; padding-bottom: 36px; border-bottom: 1px solid var(--border); }
+        .footer-brand { display: flex; flex-direction: column; gap: 16px; }
+        .footer-brand-mark { display: inline-flex; align-items: center; gap: 10px; color: var(--text-primary); font-weight: 800; font-size: 18px; letter-spacing: -0.5px; }
+        .footer-brand-icon { width: 34px; height: 34px; border-radius: 10px; background: var(--btn-bg); color: var(--btn-text); display: flex; align-items: center; justify-content: center; box-shadow: var(--card-shadow); }
+        .footer-slogan { font-size: 20px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.5px; line-height: 1.2; max-width: 260px; }
+        .footer-desc { max-width: 330px; font-size: 14px; color: var(--text-secondary); line-height: 1.7; }
+        .footer-trust { display: inline-flex; align-items: center; gap: 8px; width: fit-content; padding: 8px 12px; border: 1px solid var(--border); border-radius: 999px; color: var(--text-secondary); background: var(--surface-2); font-size: 12px; font-weight: 600; }
+        .footer-columns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+        .footer-card { padding: 20px; border: 1px solid var(--border); border-radius: 18px; background: var(--surface-2); min-height: 172px; }
+        .footer-card-title { font-size: 13px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.2px; margin-bottom: 10px; }
+        .footer-card-text { font-size: 13px; color: var(--text-secondary); line-height: 1.65; }
+        .footer-bottom { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding-top: 22px; flex-wrap: wrap; }
         .footer-copy { font-size: 13px; color: var(--text-muted); }
+        .footer-meta { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+        .footer-meta span { font-size: 13px; color: var(--text-secondary); }
 
         /* ── Responsive ── */
         @media (max-width: 768px) {
@@ -159,6 +172,8 @@ export default function HomePage() {
           .highlight-inner { grid-template-columns: 1fr; gap: 40px; }
           .highlight-inner.reverse { direction: ltr; }
           .cta-box { padding: 48px 28px; }
+          .footer-main { grid-template-columns: 1fr; gap: 32px; }
+          .footer-columns { grid-template-columns: 1fr; }
         }
         @media (max-width: 430px) {
           .home-nav-inner { padding: 0 16px; height: 50px; }
@@ -180,7 +195,11 @@ export default function HomePage() {
           .cta-box { padding: 40px 24px; border-radius: 24px; }
           .cta-title { font-size: 30px; }
           .marquee-item { padding: 14px 24px; font-size: 13px; }
-          .home-footer { padding: 24px 20px; }
+          .home-footer { padding: 40px 20px 24px; }
+          .footer-main { padding-bottom: 28px; }
+          .footer-slogan { font-size: 18px; }
+          .footer-card { min-height: auto; padding: 18px; border-radius: 16px; }
+          .footer-bottom { align-items: flex-start; flex-direction: column; }
         }
         @media (max-width: 359px) {
           .hero-title { font-size: 32px; }
@@ -336,8 +355,56 @@ export default function HomePage() {
       {/* FOOTER */}
       <footer className="home-footer" role="contentinfo">
         <div className="home-footer-inner">
-          <span className="footer-logo">Clavey</span>
-          <p className="footer-copy">© {new Date().getFullYear()} Clavey</p>
+          <div className="footer-main">
+            <div className="footer-brand">
+              <div className="footer-brand-mark" aria-label="Clavey">
+                <span className="footer-brand-icon" aria-hidden="true">
+                  <svg width="19" height="19" viewBox="0 0 22 22" fill="none">
+                    <path d="M6 11h10M11 6v10" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/>
+                  </svg>
+                </span>
+                Clavey
+              </div>
+              <p className="footer-slogan">Tu espacio personal.</p>
+              <p className="footer-desc">
+                Un lugar tranquilo para guardar notas, organizar ideas y proteger contraseñas sin ruido ni complicaciones.
+              </p>
+              <div className="footer-trust">
+                <ShieldCheck size={14} aria-hidden="true" />
+                Privacidad desde el diseño
+              </div>
+            </div>
+
+            <div className="footer-columns" aria-label="Información legal y de privacidad">
+              <section className="footer-card" aria-labelledby="footer-privacy">
+                <h3 id="footer-privacy" className="footer-card-title">Privacidad</h3>
+                <p className="footer-card-text">
+                  Tus notas y contraseñas son tuyas. Clavey no vende, comparte ni manipula los datos personales de los usuarios con fines externos.
+                </p>
+              </section>
+              <section className="footer-card" aria-labelledby="footer-security">
+                <h3 id="footer-security" className="footer-card-title">Seguridad</h3>
+                <p className="footer-card-text">
+                  La información confidencial se trata con cuidado y no se muestra de forma permanente. Las contraseñas solo se revelan cuando tú lo decides.
+                </p>
+              </section>
+              <section className="footer-card" aria-labelledby="footer-terms">
+                <h3 id="footer-terms" className="footer-card-title">Términos</h3>
+                <p className="footer-card-text">
+                  Usa Clavey como tu espacio personal de gestión. El acceso a tu cuenta y el contenido guardado dependen siempre de tu autenticación.
+                </p>
+              </section>
+            </div>
+          </div>
+
+          <div className="footer-bottom">
+            <p className="footer-copy">© {new Date().getFullYear()} Clavey. Todos los derechos reservados.</p>
+            <div className="footer-meta" aria-label="Resumen de compromisos">
+              <span>Sin venta de datos</span>
+              <span>Información confidencial protegida</span>
+              <span>Hecho para uso personal</span>
+            </div>
+          </div>
         </div>
       </footer>
     </main>
