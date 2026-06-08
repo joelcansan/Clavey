@@ -28,14 +28,9 @@ export default function PasswordsGrid({ initialPasswords }: { initialPasswords: 
     startTransition(async () => {
       const result = await createPassword(formData)
       if (result.error) { setError(result.error); return }
-      setPasswords(prev => [{
-        id: crypto.randomUUID(),
-        service_name: formData.get('service_name') as string,
-        service_icon: formData.get('service_icon') as string || null,
-        username: formData.get('username') as string,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }, ...prev])
+      if (!result.entry) { setError('No se pudo cargar la contraseña recién creada'); return }
+      const newPassword = result.entry
+      setPasswords(prev => [newPassword, ...prev])
       setShowForm(false)
       form.reset()
     })

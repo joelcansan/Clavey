@@ -17,6 +17,7 @@ export type PasswordActionResult = {
   error?: string
   success?: boolean
   decrypted?: string
+  entry?: Pick<PasswordEntry, 'id' | 'service_name' | 'service_icon' | 'username' | 'created_at' | 'updated_at'>
 }
 
 type PasswordInsert = Omit<PasswordEntry, 'id' | 'created_at' | 'updated_at'> & { id?: string }
@@ -46,12 +47,15 @@ export async function createPassword(formData: FormData): Promise<PasswordAction
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (supabase.from('password_entries') as any).insert(payload)
+  const { data, error } = await (supabase.from('password_entries') as any)
+    .insert(payload)
+    .select('id, service_name, service_icon, username, created_at, updated_at')
+    .single()
 
   if (error) return { error: error.message }
 
   revalidatePath('/dashboard/passwords')
-  return { success: true }
+  return { success: true, entry: data }
 }
 
 export async function revealPassword(id: string): Promise<PasswordActionResult> {
