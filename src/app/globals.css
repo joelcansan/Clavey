@@ -120,6 +120,14 @@ body {
   ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 999px; }
 }
 
+/* ── Mobile: sin scroll horizontal ── */
+@media (max-width: 1024px) {
+  html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+}
+
 /* ── Mobile ── */
 * { -webkit-tap-highlight-color: transparent; }
 button, a { touch-action: manipulation; }
