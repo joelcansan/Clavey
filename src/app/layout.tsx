@@ -3,7 +3,7 @@ import './globals.css'
 import { ThemeProvider } from '@/components/ThemeProvider'
 
 export const metadata: Metadata = {
-  title: 'Clavey',
+  title: 'Clavey - Tu espacio personal',
   description: 'Gestiona tus notas y contraseñas de forma segura y elegante.',
   icons: {
     icon: '/favicon.svg',
