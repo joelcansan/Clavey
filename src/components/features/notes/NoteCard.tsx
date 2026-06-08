@@ -11,8 +11,31 @@ interface NoteCardProps {
   onDeleted: (id: string) => void
 }
 
-function stripHtml(html: string) {
-  return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
+// Convierte HTML a texto legible conservando listas
+function htmlToPreview(html: string): string {
+  return html
+    // Listas ordenadas: <li> dentro de <ol> → "1. texto"
+    .replace(/<ol[^>]*>([\s\S]*?)<\/ol>/gi, (_, inner) => {
+      let i = 0
+      return inner.replace(/<li[^>]*>([\s\S]*?)<\/li>/gi, (_: string, content: string) => {
+        i++
+        return `${i}. ${content.replace(/<[^>]*>/g, '').trim()}\n`
+      })
+    })
+    // Listas no ordenadas: <li> dentro de <ul> → "• texto"
+    .replace(/<ul[^>]*>([\s\S]*?)<\/ul>/gi, (_, inner) => {
+      return inner.replace(/<li[^>]*>([\s\S]*?)<\/li>/gi, (_: string, content: string) => {
+        return `• ${content.replace(/<[^>]*>/g, '').trim()}\n`
+      })
+    })
+    // Párrafos y headings → texto + salto de línea
+    .replace(/<\/(p|h[1-6])>/gi, '\n')
+    // Quita el resto de tags
+    .replace(/<[^>]*>/g, '')
+    // Limpia espacios múltiples pero conserva saltos de línea
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
 }
 
 function extractFirstImage(html: string): string | null {
@@ -32,7 +55,7 @@ function formatDate(dateStr: string) {
 
 export default function NoteCard({ note, onEdit, onDeleted }: NoteCardProps) {
   const [isPending, startTransition] = useTransition()
-  const preview = note.content ? stripHtml(note.content).slice(0, 100) : ''
+  const preview = note.content ? htmlToPreview(note.content).slice(0, 180) : ''
   const firstImage = note.content ? extractFirstImage(note.content) : null
 
   const isLight = (hex: string) => {
@@ -74,18 +97,14 @@ export default function NoteCard({ note, onEdit, onDeleted }: NoteCardProps) {
       <button
         onClick={() => onEdit(note)}
         aria-label={`Editar nota: ${note.title}`}
-        style={{ all: 'unset', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 8, padding: '16px 16px 10px', flex: 1, textAlign: 'left', width: '100%' }}
+        style={{ all: 'unset', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 8, padding: '16px 16px 10px', flex: 1, textAlign: 'left', width: '100%', boxSizing: 'border-box' }}
       >
         {/* Imagen preview */}
         {firstImage && (
           <div style={{ width: '100%', height: 100, borderRadius: 10, overflow: 'hidden', marginBottom: 2 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={firstImage}
-              alt=""
-              aria-hidden="true"
-              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-            />
+            <img src={firstImage} alt="" aria-hidden="true"
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
           </div>
         )}
 
@@ -105,10 +124,18 @@ export default function NoteCard({ note, onEdit, onDeleted }: NoteCardProps) {
           {note.title}
         </h3>
 
-        {/* Preview texto */}
+        {/* Preview — muestra listas con • y números */}
         {preview && !firstImage && (
-          <p style={{ fontSize: 13, color: mutedColor, lineHeight: 1.55 }}>
-            {preview}{preview.length >= 100 ? '...' : ''}
+          <p style={{
+            fontSize: 12,
+            color: mutedColor,
+            lineHeight: 1.6,
+            whiteSpace: 'pre-wrap',   // respeta los saltos de línea
+            wordBreak: 'break-word',  // evita que el texto se salga horizontalmente
+            overflowWrap: 'break-word',
+            maxWidth: '100%',
+          }}>
+            {preview}{preview.length >= 180 ? '...' : ''}
           </p>
         )}
       </button>
@@ -118,15 +145,11 @@ export default function NoteCard({ note, onEdit, onDeleted }: NoteCardProps) {
         <time style={{ fontSize: 11, color: mutedColor }} dateTime={note.updated_at}>
           {formatDate(note.updated_at)}
         </time>
-        <button
-          onClick={handleDelete}
-          disabled={isPending}
-          aria-label={`Eliminar nota: ${note.title}`}
-          title="Eliminar"
+        <button onClick={handleDelete} disabled={isPending}
+          aria-label={`Eliminar nota: ${note.title}`} title="Eliminar"
           style={{ background: 'none', border: 'none', cursor: isPending ? 'not-allowed' : 'pointer', padding: '4px 5px', borderRadius: 7, color: mutedColor, opacity: 0.5, display: 'flex', alignItems: 'center', transition: 'opacity .15s' }}
           onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
-          onMouseLeave={e => (e.currentTarget.style.opacity = '0.5')}
-        >
+          onMouseLeave={e => (e.currentTarget.style.opacity = '0.5')}>
           <Trash2 size={13} aria-hidden="true" />
         </button>
       </div>
@@ -140,6 +163,7 @@ export default function NoteCard({ note, onEdit, onDeleted }: NoteCardProps) {
           flex-direction: column;
           transition: box-shadow .2s, transform .2s;
           cursor: pointer;
+          min-width: 0; /* evita que la card se expanda más allá del grid */
         }
       `}</style>
     </article>

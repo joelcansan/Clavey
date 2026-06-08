@@ -20,6 +20,11 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
   const supabase = createClient()
   const [hoveredImg, setHoveredImg] = useState<string | null>(null)
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null)
+  const [isTouch, setIsTouch] = useState(false)
+
+  useEffect(() => {
+    setIsTouch(window.matchMedia('(hover: none)').matches)
+  }, [])
 
   const editor = useEditor({
     extensions: [
@@ -149,7 +154,7 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
                 onClick={() => setLightboxSrc(img.src)}
                 title="Clic para ver en tamaño completo"
               />
-              {hoveredImg === img.src && (
+              {(isTouch || hoveredImg === img.src) && (
                 <button
                   type="button"
                   onClick={e => { e.stopPropagation(); deleteImageBySrc(img.src) }}
