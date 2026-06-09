@@ -53,19 +53,15 @@ export default function ExportPdfButton({ note, style }: ExportPdfButtonProps) {
           .pdf-header { margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid rgba(0,0,0,0.1); }
           .pdf-date { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aeaeb2; margin-bottom: 10px; }
           .pdf-title { font-size: 30px; font-weight: 700; letter-spacing: -0.5px; color: #1d1d1f; margin-bottom: 14px; line-height: 1.15; }
-          .pdf-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
           .pdf-tag {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0,0,0,0.08);
+            display: inline-block;
             color: #6e6e73;
             font-size: 11px;
             font-weight: 600;
-            height: 22px;
-            padding: 0 10px;
-            border-radius: 11px;
+            padding: 0 2px;
+            line-height: 1.5;
           }
+          .pdf-tags { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
           .pdf-content { color: #1d1d1f; }
           .pdf-content p { margin-bottom: 10px; color: #1d1d1f; }
           .pdf-content p:last-child { margin-bottom: 0; }
@@ -139,48 +135,53 @@ export default function ExportPdfButton({ note, style }: ExportPdfButtonProps) {
 
       document.body.removeChild(container)
 
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'px', format: 'a4' })
-      const pdfW = pdf.internal.pageSize.getWidth()
-      const pdfH = pdf.internal.pageSize.getHeight()
+      // PDF A4 estándar
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+      const pdfW = pdf.internal.pageSize.getWidth()   // 210mm
+      const pdfH = pdf.internal.pageSize.getHeight()  // 297mm
 
-      // Cuántos px de canvas caben en una página A4
-      const scale2 = 2
-      const pageCanvasH = Math.floor((pdfH / pdfW) * A4_W * scale2)
-
-      // Color de relleno para páginas adicionales
+      // Rellena toda la página con el color de la nota
       const r = parseInt(bg.slice(1, 3), 16)
       const g = parseInt(bg.slice(3, 5), 16)
-      const b = parseInt(bg.slice(5, 7), 16)
+      const b2 = parseInt(bg.slice(5, 7), 16)
+      pdf.setFillColor(r, g, b2)
+      pdf.rect(0, 0, pdfW, pdfH, 'F')
 
-      let offsetY = 0
-      let pageNum = 0
+      // Convierte el canvas a imagen y la pone encima del fondo
+      const imgData = canvas.toDataURL('image/png')
+      // Calcula la altura proporcional al ancho A4 (210mm)
+      const imgW = pdfW
+      const imgH = (canvas.height / canvas.width) * imgW
 
-      while (offsetY < canvas.height) {
-        if (pageNum > 0) {
-          pdf.addPage()
-          pdf.setFillColor(r, g, b)
-          pdf.rect(0, 0, pdfW, pdfH, 'F')
+      // Si la imagen es más alta que la página, la escala para que quepa
+      if (imgH <= pdfH) {
+        pdf.addImage(imgData, 'PNG', 0, 0, imgW, imgH)
+      } else {
+        // Contenido largo: añade páginas
+        let srcY = 0
+        let pageNum = 0
+        const pageH = (pdfH / imgW) * canvas.width
+
+        while (srcY < canvas.height) {
+          if (pageNum > 0) {
+            pdf.addPage()
+            pdf.setFillColor(r, g, b2)
+            pdf.rect(0, 0, pdfW, pdfH, 'F')
+          }
+          const sliceH = Math.min(pageH, canvas.height - srcY)
+          const sliceCanvas = document.createElement('canvas')
+          sliceCanvas.width = canvas.width
+          sliceCanvas.height = sliceH
+          const ctx = sliceCanvas.getContext('2d')!
+          ctx.fillStyle = bg
+          ctx.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height)
+          ctx.drawImage(canvas, 0, srcY, canvas.width, sliceH, 0, 0, canvas.width, sliceH)
+          const sliceData = sliceCanvas.toDataURL('image/png')
+          const renderedH = (sliceH / canvas.width) * imgW
+          pdf.addImage(sliceData, 'PNG', 0, 0, imgW, renderedH)
+          srcY += sliceH
+          pageNum++
         }
-
-        const sliceH = Math.min(pageCanvasH, canvas.height - offsetY)
-
-        // Si el trozo es insignificante (< 20px) no añade página
-        if (sliceH < 20) break
-
-        const pageCanvas = document.createElement('canvas')
-        pageCanvas.width = canvas.width
-        pageCanvas.height = sliceH
-        const ctx = pageCanvas.getContext('2d')!
-        ctx.fillStyle = bg
-        ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height)
-        ctx.drawImage(canvas, 0, offsetY, canvas.width, sliceH, 0, 0, canvas.width, sliceH)
-
-        const imgData = pageCanvas.toDataURL('image/jpeg', 0.93)
-        const renderedH = (sliceH / scale2) * (pdfW / A4_W)
-        pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, renderedH)
-
-        offsetY += sliceH
-        pageNum++
       }
 
       const filename = `${note.title
