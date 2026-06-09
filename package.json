@@ -21,6 +21,8 @@
     "@tiptap/react": "^3.0.0",
     "@tiptap/starter-kit": "^3.0.0",
     "bcryptjs": "^2.4.3",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^2.5.2",
     "lucide-react": "^0.474.0",
     "next": "16.2.7",
     "react": "19.2.4",

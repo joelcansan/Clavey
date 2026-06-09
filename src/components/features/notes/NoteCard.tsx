@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { Trash2, X } from 'lucide-react'
 import type { Note } from '@/types/database'
 import { deleteNote } from '@/actions/notes'
+import ExportPdfButton from './ExportPdfButton'
 
 interface NoteCardProps {
   note: Note
@@ -124,17 +125,20 @@ export default function NoteCard({ note, onEdit, onDeleted }: NoteCardProps) {
           <time style={{ fontSize: 11, color: mutedColor }} dateTime={note.updated_at}>
             {formatDate(note.updated_at)}
           </time>
-          <button
-            onClick={e => { e.stopPropagation(); setShowConfirm(true) }}
-            disabled={isPending}
-            aria-label={`Eliminar nota: ${note.title}`}
-            title="Eliminar"
-            style={{ background: 'none', border: 'none', cursor: isPending ? 'not-allowed' : 'pointer', padding: '8px', borderRadius: 8, color: mutedColor, opacity: 0.5, display: 'flex', alignItems: 'center', transition: 'opacity .15s', touchAction: 'manipulation' }}
-            onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
-            onMouseLeave={e => (e.currentTarget.style.opacity = '0.5')}
-          >
-            <Trash2 size={14} aria-hidden="true" />
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <ExportPdfButton note={note} style={{ color: mutedColor }} />
+            <button
+              onClick={e => { e.stopPropagation(); setShowConfirm(true) }}
+              disabled={isPending}
+              aria-label={`Eliminar nota: ${note.title}`}
+              title="Eliminar"
+              style={{ background: 'none', border: 'none', cursor: isPending ? 'not-allowed' : 'pointer', padding: '8px', borderRadius: 8, color: mutedColor, opacity: 0.5, display: 'flex', alignItems: 'center', transition: 'opacity .15s', touchAction: 'manipulation' }}
+              onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+              onMouseLeave={e => (e.currentTarget.style.opacity = '0.5')}
+            >
+              <Trash2 size={14} aria-hidden="true" />
+            </button>
+          </div>
         </div>
       </article>
 
