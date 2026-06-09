@@ -14,6 +14,10 @@ interface ExportPdfButtonProps {
   style?: React.CSSProperties
 }
 
+// A4 a 96dpi = 794px ancho x 1123px alto
+const A4_W = 794
+const A4_H = 1123
+
 export default function ExportPdfButton({ note, style }: ExportPdfButtonProps) {
   const [isExporting, setIsExporting] = useState(false)
 
@@ -28,20 +32,34 @@ export default function ExportPdfButton({ note, style }: ExportPdfButtonProps) {
         import('html2canvas'),
       ])
 
-      // Contenedor temporal fuera de pantalla
+      const bg = note.bg_color || '#ffffff'
+
+      // Wrapper exterior — fuerza que el fondo cubra toda la página A4
+      const wrapper = document.createElement('div')
+      wrapper.style.cssText = `
+        position: fixed;
+        top: -99999px;
+        left: -99999px;
+        width: ${A4_W}px;
+        min-height: ${A4_H}px;
+        background: ${bg};
+        box-sizing: border-box;
+      `
+
+      // Contenedor interior con el contenido
       const container = document.createElement('div')
       container.style.cssText = `
-        position: fixed;
-        top: -9999px;
-        left: -9999px;
-        width: 794px;
+        width: ${A4_W}px;
+        min-height: ${A4_H}px;
         padding: 60px 64px;
-        background: ${note.bg_color || '#ffffff'};
+        background: ${bg};
         font-family: "DM Sans", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
         font-size: 15px;
         line-height: 1.65;
         color: #1d1d1f;
         box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
       `
 
       container.innerHTML = `
@@ -49,11 +67,24 @@ export default function ExportPdfButton({ note, style }: ExportPdfButtonProps) {
           * { font-family: "DM Sans", -apple-system, BlinkMacSystemFont, sans-serif !important; box-sizing: border-box; }
           .pdf-header { margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid rgba(0,0,0,0.1); }
           .pdf-date { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aeaeb2; margin-bottom: 10px; }
-          .pdf-title { font-size: 30px; font-weight: 700; letter-spacing: -0.6px; color: #1d1d1f; margin-bottom: 14px; line-height: 1.15; }
-          .pdf-tags { display: flex; gap: 6px; flex-wrap: wrap; }
-          .pdf-tag { background: rgba(0,0,0,0.07); color: #6e6e73; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 980px; }
-          .pdf-content { color: #1d1d1f; }
+          .pdf-title { font-size: 30px; font-weight: 700; letter-spacing: -0.5px; color: #1d1d1f; margin-bottom: 14px; line-height: 1.15; }
+          .pdf-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+          /* Etiqueta: inline-block con line-height explícito para centrado perfecto en html2canvas */
+          .pdf-tag {
+            display: inline-block;
+            background: rgba(0,0,0,0.08);
+            color: #6e6e73;
+            font-size: 11px;
+            font-weight: 600;
+            line-height: 20px;
+            height: 20px;
+            padding: 0 10px;
+            border-radius: 10px;
+            vertical-align: middle;
+          }
+          .pdf-content { color: #1d1d1f; flex: 1; }
           .pdf-content p { margin-bottom: 10px; color: #1d1d1f; }
+          .pdf-content p:last-child { margin-bottom: 0; }
           .pdf-content h1 { font-size: 24px; font-weight: 700; margin: 6px 0 10px; letter-spacing: -0.4px; }
           .pdf-content h2 { font-size: 20px; font-weight: 700; margin: 6px 0 10px; letter-spacing: -0.3px; }
           .pdf-content h3 { font-size: 17px; font-weight: 700; margin: 6px 0 8px; }
@@ -64,11 +95,18 @@ export default function ExportPdfButton({ note, style }: ExportPdfButtonProps) {
           .pdf-content ul { list-style-type: disc !important; padding-left: 24px !important; margin-bottom: 10px; }
           .pdf-content ol { list-style-type: decimal !important; padding-left: 24px !important; margin-bottom: 10px; }
           .pdf-content li { display: list-item !important; margin-bottom: 4px; color: #1d1d1f; }
-          .pdf-content img { max-width: 100%; max-height: 400px; border-radius: 10px; margin: 12px 0; display: block; object-fit: contain; }
-          .pdf-content mark { background: #fef08a; padding: 1px 3px; border-radius: 2px; }
+          .pdf-content img { max-width: 100%; max-height: 380px; border-radius: 10px; margin: 12px 0; display: block; object-fit: contain; }
+          .pdf-content mark { background: #fef08a; padding: 1px 3px; border-radius: 3px; }
           .pdf-content code { font-family: "Courier New", monospace !important; background: rgba(0,0,0,0.06); padding: 2px 6px; border-radius: 4px; font-size: 13px; }
-          .pdf-content blockquote { border-left: 3px solid #1d1d1f; padding-left: 16px; margin: 10px 0; color: #6e6e73; }
-          .pdf-footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid rgba(0,0,0,0.08); display: flex; justify-content: space-between; align-items: center; }
+          .pdf-content blockquote { border-left: 3px solid rgba(0,0,0,0.2); padding-left: 16px; margin: 10px 0; color: #6e6e73; }
+          .pdf-footer {
+            margin-top: auto;
+            padding-top: 20px;
+            border-top: 1px solid rgba(0,0,0,0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          }
           .pdf-footer span { font-size: 11px; color: #aeaeb2; font-weight: 500; }
         </style>
 
@@ -94,7 +132,8 @@ export default function ExportPdfButton({ note, style }: ExportPdfButtonProps) {
         </div>
       `
 
-      document.body.appendChild(container)
+      wrapper.appendChild(container)
+      document.body.appendChild(wrapper)
 
       // Espera a que carguen todas las imágenes
       const imgs = Array.from(container.querySelectorAll('img'))
@@ -107,43 +146,57 @@ export default function ExportPdfButton({ note, style }: ExportPdfButtonProps) {
         })
       ))
 
-      const canvas = await html2canvas(container, {
+      const totalH = Math.max(container.scrollHeight, A4_H)
+
+      const canvas = await html2canvas(wrapper, {
         scale: 2,
         useCORS: true,
         allowTaint: false,
-        backgroundColor: note.bg_color || '#ffffff',
+        backgroundColor: bg,
         logging: false,
         imageTimeout: 15000,
-        width: 794,
+        width: A4_W,
+        height: totalH,
+        windowWidth: A4_W,
       })
 
-      document.body.removeChild(container)
+      document.body.removeChild(wrapper)
 
-      // Genera PDF paginado
+      // PDF paginado — el fondo de cada página es el color de la nota
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'px', format: 'a4' })
       const pdfW = pdf.internal.pageSize.getWidth()
       const pdfH = pdf.internal.pageSize.getHeight()
-      const canvasW = canvas.width
-      const canvasH = canvas.height
-      const ratio = pdfW / (canvasW / 2)
-      const totalH = (canvasH / 2) * ratio
-      const pageCanvasH = Math.floor((pdfH / ratio) * 2)
+      const scale2 = 2
+      const pageCanvasH = Math.floor((pdfH / pdfW) * A4_W * scale2)
 
       let offsetY = 0
       let pageNum = 0
 
-      while (offsetY < canvasH) {
-        if (pageNum > 0) pdf.addPage()
+      while (offsetY < canvas.height) {
+        if (pageNum > 0) {
+          pdf.addPage()
+          // Rellena el fondo de cada página nueva con el color de la nota
+          pdf.setFillColor(
+            parseInt(bg.slice(1, 3), 16),
+            parseInt(bg.slice(3, 5), 16),
+            parseInt(bg.slice(5, 7), 16)
+          )
+          pdf.rect(0, 0, pdfW, pdfH, 'F')
+        }
 
-        const sliceH = Math.min(pageCanvasH, canvasH - offsetY)
+        const sliceH = Math.min(pageCanvasH, canvas.height - offsetY)
         const pageCanvas = document.createElement('canvas')
-        pageCanvas.width = canvasW
+        pageCanvas.width = canvas.width
         pageCanvas.height = sliceH
-        const ctx = pageCanvas.getContext('2d')!
-        ctx.drawImage(canvas, 0, offsetY, canvasW, sliceH, 0, 0, canvasW, sliceH)
 
-        const imgData = pageCanvas.toDataURL('image/jpeg', 0.92)
-        const renderedH = (sliceH / 2) * ratio
+        const ctx = pageCanvas.getContext('2d')!
+        // Rellena el fondo del canvas de página con el color de la nota
+        ctx.fillStyle = bg
+        ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height)
+        ctx.drawImage(canvas, 0, offsetY, canvas.width, sliceH, 0, 0, canvas.width, sliceH)
+
+        const imgData = pageCanvas.toDataURL('image/jpeg', 0.93)
+        const renderedH = (sliceH / scale2) * (pdfW / A4_W)
         pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, renderedH)
 
         offsetY += sliceH
