@@ -14,9 +14,7 @@ interface ExportPdfButtonProps {
   style?: React.CSSProperties
 }
 
-// A4 a 96dpi = 794px ancho x 1123px alto
 const A4_W = 794
-const A4_H = 1123
 
 export default function ExportPdfButton({ note, style }: ExportPdfButtonProps) {
   const [isExporting, setIsExporting] = useState(false)
@@ -34,32 +32,19 @@ export default function ExportPdfButton({ note, style }: ExportPdfButtonProps) {
 
       const bg = note.bg_color || '#ffffff'
 
-      // Wrapper exterior — fuerza que el fondo cubra toda la página A4
-      const wrapper = document.createElement('div')
-      wrapper.style.cssText = `
+      const container = document.createElement('div')
+      container.style.cssText = `
         position: fixed;
         top: -99999px;
         left: -99999px;
         width: ${A4_W}px;
-        min-height: ${A4_H}px;
-        background: ${bg};
-        box-sizing: border-box;
-      `
-
-      // Contenedor interior con el contenido
-      const container = document.createElement('div')
-      container.style.cssText = `
-        width: ${A4_W}px;
-        min-height: ${A4_H}px;
-        padding: 60px 64px;
+        padding: 60px 64px 60px;
         background: ${bg};
         font-family: "DM Sans", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
         font-size: 15px;
         line-height: 1.65;
         color: #1d1d1f;
         box-sizing: border-box;
-        display: flex;
-        flex-direction: column;
       `
 
       container.innerHTML = `
@@ -69,20 +54,19 @@ export default function ExportPdfButton({ note, style }: ExportPdfButtonProps) {
           .pdf-date { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aeaeb2; margin-bottom: 10px; }
           .pdf-title { font-size: 30px; font-weight: 700; letter-spacing: -0.5px; color: #1d1d1f; margin-bottom: 14px; line-height: 1.15; }
           .pdf-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
-          /* Etiqueta: inline-block con line-height explícito para centrado perfecto en html2canvas */
           .pdf-tag {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             background: rgba(0,0,0,0.08);
             color: #6e6e73;
             font-size: 11px;
             font-weight: 600;
-            line-height: 20px;
-            height: 20px;
+            height: 22px;
             padding: 0 10px;
-            border-radius: 10px;
-            vertical-align: middle;
+            border-radius: 11px;
           }
-          .pdf-content { color: #1d1d1f; flex: 1; }
+          .pdf-content { color: #1d1d1f; }
           .pdf-content p { margin-bottom: 10px; color: #1d1d1f; }
           .pdf-content p:last-child { margin-bottom: 0; }
           .pdf-content h1 { font-size: 24px; font-weight: 700; margin: 6px 0 10px; letter-spacing: -0.4px; }
@@ -99,14 +83,7 @@ export default function ExportPdfButton({ note, style }: ExportPdfButtonProps) {
           .pdf-content mark { background: #fef08a; padding: 1px 3px; border-radius: 3px; }
           .pdf-content code { font-family: "Courier New", monospace !important; background: rgba(0,0,0,0.06); padding: 2px 6px; border-radius: 4px; font-size: 13px; }
           .pdf-content blockquote { border-left: 3px solid rgba(0,0,0,0.2); padding-left: 16px; margin: 10px 0; color: #6e6e73; }
-          .pdf-footer {
-            margin-top: auto;
-            padding-top: 20px;
-            border-top: 1px solid rgba(0,0,0,0.08);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-          }
+          .pdf-footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid rgba(0,0,0,0.08); display: flex; justify-content: space-between; align-items: center; }
           .pdf-footer span { font-size: 11px; color: #aeaeb2; font-weight: 500; }
         </style>
 
@@ -132,10 +109,9 @@ export default function ExportPdfButton({ note, style }: ExportPdfButtonProps) {
         </div>
       `
 
-      wrapper.appendChild(container)
-      document.body.appendChild(wrapper)
+      document.body.appendChild(container)
 
-      // Espera a que carguen todas las imágenes
+      // Espera imágenes
       const imgs = Array.from(container.querySelectorAll('img'))
       await Promise.all(imgs.map(img =>
         new Promise<void>(resolve => {
@@ -146,9 +122,10 @@ export default function ExportPdfButton({ note, style }: ExportPdfButtonProps) {
         })
       ))
 
-      const totalH = Math.max(container.scrollHeight, A4_H)
+      // Altura real del contenido — sin mínimo forzado
+      const realH = container.scrollHeight
 
-      const canvas = await html2canvas(wrapper, {
+      const canvas = await html2canvas(container, {
         scale: 2,
         useCORS: true,
         allowTaint: false,
@@ -156,18 +133,24 @@ export default function ExportPdfButton({ note, style }: ExportPdfButtonProps) {
         logging: false,
         imageTimeout: 15000,
         width: A4_W,
-        height: totalH,
+        height: realH,
         windowWidth: A4_W,
       })
 
-      document.body.removeChild(wrapper)
+      document.body.removeChild(container)
 
-      // PDF paginado — el fondo de cada página es el color de la nota
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'px', format: 'a4' })
       const pdfW = pdf.internal.pageSize.getWidth()
       const pdfH = pdf.internal.pageSize.getHeight()
+
+      // Cuántos px de canvas caben en una página A4
       const scale2 = 2
       const pageCanvasH = Math.floor((pdfH / pdfW) * A4_W * scale2)
+
+      // Color de relleno para páginas adicionales
+      const r = parseInt(bg.slice(1, 3), 16)
+      const g = parseInt(bg.slice(3, 5), 16)
+      const b = parseInt(bg.slice(5, 7), 16)
 
       let offsetY = 0
       let pageNum = 0
@@ -175,22 +158,19 @@ export default function ExportPdfButton({ note, style }: ExportPdfButtonProps) {
       while (offsetY < canvas.height) {
         if (pageNum > 0) {
           pdf.addPage()
-          // Rellena el fondo de cada página nueva con el color de la nota
-          pdf.setFillColor(
-            parseInt(bg.slice(1, 3), 16),
-            parseInt(bg.slice(3, 5), 16),
-            parseInt(bg.slice(5, 7), 16)
-          )
+          pdf.setFillColor(r, g, b)
           pdf.rect(0, 0, pdfW, pdfH, 'F')
         }
 
         const sliceH = Math.min(pageCanvasH, canvas.height - offsetY)
+
+        // Si el trozo es insignificante (< 20px) no añade página
+        if (sliceH < 20) break
+
         const pageCanvas = document.createElement('canvas')
         pageCanvas.width = canvas.width
         pageCanvas.height = sliceH
-
         const ctx = pageCanvas.getContext('2d')!
-        // Rellena el fondo del canvas de página con el color de la nota
         ctx.fillStyle = bg
         ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height)
         ctx.drawImage(canvas, 0, offsetY, canvas.width, sliceH, 0, 0, canvas.width, sliceH)
