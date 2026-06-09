@@ -2,7 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { ArrowRight, FileText, Lock, Cloud, Palette, Zap, FileOutput, Moon, Sun, ShieldCheck } from 'lucide-react'
+import { ArrowRight, FileText, Lock, Cloud, Palette, Zap, FileOutput, Moon, Sun, ShieldCheck, Download, Smartphone, Monitor, Wifi } from 'lucide-react'
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt(): Promise<void>
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
+}
 import { useTheme } from '@/components/ThemeProvider'
 
 function useInView(threshold = 0.15) {
@@ -55,16 +60,64 @@ const banners = [
   { icon: Cloud, text: 'Sincronización en la nube' },
   { icon: Palette, text: 'Notas personalizables' },
   { icon: Zap, text: 'Velocidad real' },
+  { icon: Smartphone, text: 'Disponible en iOS y Android' },
+  { icon: Monitor, text: 'Disponible en Windows y Mac' },
+  { icon: Download, text: 'Descárgalo gratis' },
   { icon: FileText, text: 'Editor de notas rico' },
   { icon: Lock, text: 'Contraseñas cifradas AES-256' },
   { icon: FileOutput, text: 'Exporta a PDF' },
   { icon: Cloud, text: 'Sincronización en la nube' },
   { icon: Palette, text: 'Notas personalizables' },
   { icon: Zap, text: 'Velocidad real' },
+  { icon: Smartphone, text: 'Disponible en iOS y Android' },
+  { icon: Monitor, text: 'Disponible en Windows y Mac' },
+  { icon: Download, text: 'Descárgalo gratis' },
 ]
 
 export default function HomePage() {
   const { theme, toggle } = useTheme()
+  const [installPrompt, setInstallPrompt] = useState<Event | null>(null)
+  const [isInstalled, setIsInstalled] = useState(false)
+  const [installing, setInstalling] = useState(false)
+
+  useEffect(() => {
+    // Detecta si ya está instalada
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setIsInstalled(true)
+    }
+    // Captura el evento de instalación
+    const handler = (e: Event) => { e.preventDefault(); setInstallPrompt(e) }
+    window.addEventListener('beforeinstallprompt', handler)
+    window.addEventListener('appinstalled', () => setIsInstalled(true))
+    return () => window.removeEventListener('beforeinstallprompt', handler)
+  }, [])
+
+  const phoneRef = useRef<HTMLDivElement>(null)
+  const [phoneRotation, setPhoneRotation] = useState(18)
+
+  useEffect(() => {
+    function handleScroll() {
+      if (!phoneRef.current) return
+      const rect = phoneRef.current.getBoundingClientRect()
+      const windowH = window.innerHeight
+      const progress = Math.min(Math.max((windowH - rect.top) / (windowH * 0.6), 0), 1)
+      setPhoneRotation(18 - progress * 18)
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    handleScroll()
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  async function handleInstall() {
+    if (!installPrompt) return
+    setInstalling(true)
+    const prompt = installPrompt as BeforeInstallPromptEvent
+    prompt.prompt()
+    const { outcome } = await prompt.userChoice
+    if (outcome === 'accepted') setIsInstalled(true)
+    setInstallPrompt(null)
+    setInstalling(false)
+  }
 
   return (
     <main id="main-content">
@@ -139,7 +192,33 @@ export default function HomePage() {
         .mock-pass-line.short { width: 55%; }
         .mock-pass-btn { height: 34px; background: var(--surface-2); border-radius: 10px; border: 1px solid var(--border); }
 
-        /* ── CTA ── */
+        /* ── Download PWA ── */
+        .pwa-section { padding: 100px 28px; background: var(--surface); transition: background .3s; }
+        .pwa-inner { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+        .pwa-label { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 16px; }
+        .pwa-title { font-size: clamp(28px, 3vw, 42px); font-weight: 700; letter-spacing: -0.8px; color: var(--text-primary); margin-bottom: 16px; line-height: 1.15; }
+        .pwa-desc { font-size: 16px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 32px; }
+        .pwa-pills { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 32px; }
+        .pwa-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 980px; border: 1px solid var(--border); font-size: 13px; font-weight: 500; color: var(--text-secondary); background: var(--surface-2); }
+        .btn-install { display: inline-flex; align-items: center; gap: 10px; padding: 14px 28px; border-radius: 980px; font-size: 15px; font-weight: 600; color: var(--btn-text); background: var(--btn-bg); border: none; cursor: pointer; transition: opacity .15s, transform .15s; letter-spacing: -0.2px; }
+        .btn-install:hover { opacity: 0.85; transform: translateY(-2px); }
+        .btn-install:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-install-installed { display: inline-flex; align-items: center; gap: 10px; padding: 15px 28px; border-radius: 16px; font-size: 16px; font-weight: 700; color: #16a34a; background: #f0faf4; border: 1px solid #a7f3c0; cursor: default; letter-spacing: -0.3px; }
+        .pwa-visual { position: relative; display: flex; align-items: center; justify-content: center; }
+        .pwa-phone { width: 220px; background: var(--btn-bg); border-radius: 36px; padding: 16px 12px; box-shadow: 0 24px 80px rgba(0,0,0,0.18), 0 4px 16px rgba(0,0,0,0.1); }
+        .pwa-phone-screen { background: var(--surface); border-radius: 24px; overflow: hidden; }
+        .pwa-phone-topbar { background: var(--surface); padding: 10px 14px 8px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border); }
+        .pwa-phone-logo { width: 22px; height: 22px; border-radius: 7px; background: var(--btn-bg); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .pwa-phone-title { font-size: 12px; font-weight: 700; color: var(--text-primary); }
+        .pwa-phone-body { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+        .pwa-phone-card { background: var(--surface-2); border-radius: 12px; padding: 12px; border: 1px solid var(--border); }
+        .pwa-phone-card-title { font-size: 11px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; }
+        .pwa-phone-line { height: 7px; background: var(--border); border-radius: 4px; margin-bottom: 4px; }
+        .pwa-phone-line.short { width: 55%; }
+        .pwa-badge { position: absolute; top: -12px; right: -12px; background: #22c55e; color: #fff; font-size: 11px; font-weight: 700; padding: 6px 12px; border-radius: 980px; white-space: nowrap; box-shadow: 0 4px 12px rgba(34,197,94,0.35); animation: badgePulse 2.5s ease-in-out infinite; }
+        @keyframes badgePulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        @media (max-width: 768px) { .pwa-inner { grid-template-columns: 1fr; gap: 48px; } .pwa-visual { order: -1; } }
+        @media (max-width: 430px) { .pwa-section { padding: 64px 20px; } .pwa-phone { width: 180px; } }
         .cta-section { padding: 100px 28px; background: var(--surface-2); transition: background .3s; }
         .cta-box { max-width: 600px; margin: 0 auto; background: var(--btn-bg); border-radius: 32px; padding: 72px 56px; text-align: center; transition: background .3s; }
         .cta-title { font-size: clamp(32px, 4vw, 48px); font-weight: 700; color: var(--btn-text); letter-spacing: -1px; margin-bottom: 12px; line-height: 1.1; }
@@ -333,6 +412,115 @@ export default function HomePage() {
                   </div>
                 </div>
                 <div className="mock-pass-btn" />
+              </div>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* PWA DOWNLOAD */}
+      <section className="pwa-section" aria-labelledby="pwa-title">
+        <div className="pwa-inner">
+          <Reveal direction="left">
+            <div>
+              <p className="pwa-label">Disponible como app</p>
+              <h2 id="pwa-title" className="pwa-title">Llévate Clavey en el bolsillo.</h2>
+              <p className="pwa-desc">
+                Instala Clavey como una app nativa en tu móvil o escritorio. Sin tiendas, sin descargas extra. Un clic y listo.
+              </p>
+              <div className="pwa-pills">
+                <span className="pwa-pill"><Smartphone size={13} aria-hidden="true" /> iOS y Android</span>
+                <span className="pwa-pill"><Monitor size={13} aria-hidden="true" /> Windows y Mac</span>
+                <span className="pwa-pill"><Wifi size={13} aria-hidden="true" /> Funciona offline</span>
+              </div>
+              {isInstalled ? (
+                <div className="btn-install-installed" aria-label="App ya instalada">
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                    <circle cx="9" cy="9" r="9" fill="#22c55e"/>
+                    <path d="M5 9l3 3 5-5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  Ya está instalada
+                </div>
+              ) : (
+                <button
+                  onClick={handleInstall}
+                  disabled={!installPrompt || installing}
+                  className="btn-install"
+                  aria-label="Instalar Clavey como app"
+                >
+                  <Download size={18} aria-hidden="true" />
+                  {installing ? 'Instalando...' : 'Instalar app gratis'}
+                </button>
+              )}
+            </div>
+          </Reveal>
+
+          <Reveal direction="right">
+            <div className="pwa-visual" aria-hidden="true" ref={phoneRef}>
+              {/* Sombras detrás del teléfono */}
+              <div style={{
+                position: 'absolute',
+                width: 220,
+                background: 'var(--btn-bg)',
+                borderRadius: 36,
+                top: 10,
+                left: '50%',
+                transform: `translateX(-50%) rotate(${phoneRotation + 6}deg)`,
+                transition: 'transform 0.08s linear',
+                opacity: 0.15,
+                bottom: 10,
+              }} />
+              <div style={{
+                position: 'absolute',
+                width: 220,
+                background: 'var(--btn-bg)',
+                borderRadius: 36,
+                top: 6,
+                left: '50%',
+                transform: `translateX(-50%) rotate(${phoneRotation + 3}deg)`,
+                transition: 'transform 0.08s linear',
+                opacity: 0.3,
+                bottom: 6,
+              }} />
+              <div
+                style={{
+                  width: 220,
+                  background: 'var(--btn-bg)',
+                  borderRadius: 36,
+                  padding: '16px 12px',
+                  boxShadow: '0 32px 80px rgba(0,0,0,0.22), 0 8px 24px rgba(0,0,0,0.12)',
+                  transform: `rotate(${phoneRotation}deg)`,
+                  transition: 'transform 0.08s linear',
+                  position: 'relative',
+                  zIndex: 2,
+                }}
+              >
+                <div className="pwa-phone-screen">
+                  <div className="pwa-phone-topbar">
+                    <div className="pwa-phone-logo">
+                      <svg width="14" height="14" viewBox="0 0 22 22" fill="none">
+                        <path d="M6 11h10M11 6v10" stroke={theme === 'dark' ? '#000000' : '#ffffff'} strokeWidth="2.5" strokeLinecap="round"/>
+                      </svg>
+                    </div>
+                    <span className="pwa-phone-title">Clavey</span>
+                  </div>
+                  <div className="pwa-phone-body">
+                    <div className="pwa-phone-card">
+                      <div className="pwa-phone-card-title">Mis notas</div>
+                      <div className="pwa-phone-line" />
+                      <div className="pwa-phone-line short" />
+                    </div>
+                    <div className="pwa-phone-card">
+                      <div className="pwa-phone-card-title">Reunión de producto</div>
+                      <div className="pwa-phone-line" />
+                      <div className="pwa-phone-line short" />
+                    </div>
+                    <div className="pwa-phone-card" style={{ opacity: 0.5 }}>
+                      <div className="pwa-phone-card-title">Ideas del proyecto</div>
+                      <div className="pwa-phone-line" />
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </Reveal>
