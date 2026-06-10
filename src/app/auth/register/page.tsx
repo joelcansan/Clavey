@@ -7,6 +7,7 @@ import { register, loginWithGoogle } from '@/actions/auth'
 
 export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null)
+  const [needsConfirmation, setNeedsConfirmation] = useState(false)
   const [isPending, startTransition] = useTransition()
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -16,6 +17,7 @@ export default function RegisterPage() {
     startTransition(async () => {
       const result = await register(formData)
       if (result?.error) setError(result.error)
+      if (result?.needsConfirmation) setNeedsConfirmation(true)
     })
   }
 
@@ -38,6 +40,25 @@ export default function RegisterPage() {
           Clavey
         </Link>
 
+        {needsConfirmation ? (
+          /* Pantalla de confirmación de email */
+          <div style={{ textAlign: 'center', padding: '8px 0' }}>
+            <div style={{ width: 56, height: 56, borderRadius: 16, background: 'var(--success-bg)', border: '1px solid var(--success-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke="var(--success-text)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 10, letterSpacing: '-0.4px' }}>Revisa tu email</h2>
+            <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 24 }}>
+              Te hemos enviado un enlace de confirmación. Haz clic en él para activar tu cuenta y empezar a usar Clavey.
+            </p>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>¿No te ha llegado? Revisa la carpeta de spam.</p>
+            <Link href="/auth/login" style={{ display: 'inline-block', marginTop: 24, fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', textDecoration: 'none', borderBottom: '1px solid var(--border-strong)' }}>
+              Volver al inicio de sesión
+            </Link>
+          </div>
+        ) : (
+        <>
         <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.6px', color: 'var(--text-primary)', marginBottom: 4 }}>Crear cuenta</h1>
         <p style={{ fontSize: 15, color: 'var(--text-secondary)', marginBottom: 28 }}>Empieza gratis, sin tarjeta de crédito</p>
 
@@ -91,6 +112,8 @@ export default function RegisterPage() {
           ¿Ya tienes cuenta?{' '}
           <Link href="/auth/login" style={{ color: 'var(--text-primary)', fontWeight: 600, textDecoration: 'none', borderBottom: '1px solid var(--border-strong)' }}>Iniciar sesión</Link>
         </p>
+        </>
+        )}
       </div>
     </main>
   )

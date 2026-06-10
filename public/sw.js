@@ -2,13 +2,24 @@ const CACHE_NAME = 'clavey-v1'
 
 const STATIC_ASSETS = [
   '/',
-  '/dashboard/notes',
-  '/dashboard/passwords',
   '/manifest.json',
   '/favicon.svg',
 ]
 
-// Instalación — cachea assets estáticos
+// Rutas que NUNCA deben cachearse ni interceptarse
+const SKIP_PATTERNS = [
+  '/dashboard',     // páginas autenticadas — siempre fresh
+  '/auth',          // flujo de autenticación
+  '/api',           // API routes
+  '_next/data',     // datos de Next.js
+  'supabase.co',    // Supabase — auth, storage, DB
+]
+
+function shouldSkip(url) {
+  return SKIP_PATTERNS.some(pattern => url.includes(pattern))
+}
+
+// Instalación — solo cachea assets públicos estáticos
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
@@ -26,23 +37,42 @@ self.addEventListener('activate', (event) => {
   self.clients.claim()
 })
 
-// Fetch — network first, cache fallback
+// Fetch — solo intercepta GET de assets estáticos públicos
 self.addEventListener('fetch', (event) => {
-  // Solo intercepta GET y URLs del mismo origen o Supabase
-  if (event.request.method !== 'GET') return
-  const url = new URL(event.request.url)
-  if (url.origin !== location.origin && !url.hostname.includes('supabase.co')) return
+  const url = event.request.url
 
+  // Ignora todo excepto GET
+  if (event.request.method !== 'GET') return
+
+  // Ignora rutas dinámicas, auth, dashboard y Supabase
+  if (shouldSkip(url)) return
+
+  // Solo intercepta mismo origen
+  if (!url.startsWith(self.location.origin)) return
+
+  // Solo cachea assets estáticos (_next/static, iconos, manifest, fonts)
+  const isStaticAsset = (
+    url.includes('/_next/static/') ||
+    url.includes('/icons/') ||
+    url.endsWith('/manifest.json') ||
+    url.endsWith('/favicon.svg') ||
+    url.includes('fonts.googleapis.com') ||
+    url.includes('fonts.gstatic.com')
+  )
+
+  if (!isStaticAsset) return
+
+  // Cache-first para assets estáticos (tienen hash en el nombre)
   event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        // Cachea la respuesta si es válida
-        if (response && response.status === 200 && response.type === 'basic') {
+    caches.match(event.request).then((cached) => {
+      if (cached) return cached
+      return fetch(event.request).then((response) => {
+        if (response && response.status === 200) {
           const clone = response.clone()
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone))
         }
         return response
       })
-      .catch(() => caches.match(event.request))
+    })
   )
 })

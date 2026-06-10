@@ -34,7 +34,7 @@ El nombre **Clavey** es una fusión de *clave* (español) y *key* (inglés), dos
 - Inserción de **imágenes** con previsualización en tiempo real
 - **15 colores de fondo** para personalizar cada nota (saturados y pastel)
 - **Etiquetas** para organizar y filtrar
-- **Búsqueda en tiempo real** sobre título, contenido y etiquetas
+supa- **Búsqueda en tiempo real** sobre título, contenido y etiquetas
 - **Exportación a PDF** preservando todo el formato: listas, imágenes, colores y estilos
 
 ### 🔐 Módulo de Contraseñas
